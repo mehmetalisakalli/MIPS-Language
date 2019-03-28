@@ -1,0 +1,611 @@
+# initialize data segment
+
+    .data
+welcome:    .asciiz     "Welcome to our MIPS project!\n"
+menu:       .asciiz     "\n\nMain Menu:\n 1. Number Series\n 2. Prims Algorithm\n 3. Encrypt/Decrypt\n 4. Exit\n Please select an option: "
+menuJT:     .word       Q1, Q2, Q3, EXIT
+q1str1:     .asciiz     "\nEnter the first number in the series: "
+q1str2:     .asciiz     "\nEnter the number of integers in the series: "
+q1str3:     .asciiz     "\nEnter the offset between two successive integers in the series: "
+q1str4:     .asciiz     "\nThe series is: "
+q1str5:     .asciiz     "\nThe summation of the numbers is: "
+q2str1:     .asciiz     "\nEnter the graph: "
+q2str2:     .asciiz     "\nMinimum Spanning Tree: \n"
+q2str3:     .asciiz     "\nTotal weight is : "
+q2input:    .space      1025
+q2inpSize:  .word       0
+q2visited:  .space      1024
+q2visSize:  .word       0
+q3str1:     .asciiz     "\nEnter an input string: "
+q3str2:     .asciiz     "\nEnter an offset value: "
+q3str3:     .asciiz     "\nSOURCE: "
+q3str4:     .asciiz     "PROCESSED: "
+q3str5:     .asciiz     "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"
+q3input:    .space      129
+exitstr:    .asciiz     "\n\nProgram ends. Bye..."
+newLine:    .asciiz     "\n"
+space:      .asciiz     " "
+
+# initialize text segment
+    .text
+    .globl main
+main:
+    # print welcome message
+    li  $v0, 4
+    la  $a0, welcome
+    syscall
+
+    # start main menu
+    mainMenu:
+        # print menu message
+        li  $v0, 4
+        la  $a0, menu
+        syscall
+
+        # get user input
+        li  $v0, 5
+        syscall
+        add $t0, $v0, $0
+
+        # find question or exit in the jump table and jump to that address
+        addi $t0, $t0, -1
+        sll  $t0, $t0, 2
+        la   $t1, menuJT
+        add  $t0, $t1, $t0
+        lw   $t0, 0($t0)
+        j    $t0
+
+        # question 1
+        Q1:
+            # print message: "Enter the first number in the series: "
+            li  $v0, 4
+            la  $a0, q1str1
+            syscall
+
+            # get user input
+            li  $v0, 5
+            syscall
+            add $t0, $v0, $0
+
+            # print message: "Enter the number of integers in the series: "
+            li  $v0, 4
+            la  $a0, q1str2
+            syscall
+
+            # get user input
+            li  $v0, 5
+            syscall
+            add $t1, $v0, $0
+
+            # print message: "Enter the offset between two successive integers in the series: "
+            li  $v0, 4
+            la  $a0, q1str3
+            syscall
+
+            # get user input
+            li  $v0, 5
+            syscall
+            add $t2, $v0, $0
+
+            # print output: "The series is: "
+            li  $v0, 4
+            la  $a0, q1str4
+            syscall
+
+            # calculate and print new number at each iteration
+            move $t4, $0
+            q1loop1:
+                addi $t1, $t1, -1
+
+                # print number
+                li  $v0, 1
+                add $a0, $t0, $0
+                syscall
+
+                # print space
+                li  $v0, 4
+                la  $a0, space
+                syscall
+
+                # summation: total += new_number
+                add $t4, $t4, $t0
+                add $t0, $t0, $t2
+                bne $t1, $0, q1loop1
+
+            # print output: "The summation of the numbers is"
+            li  $v0, 4
+            la  $a0, q1str5
+            syscall
+
+            # print summation
+            li  $v0, 1
+            add $a0, $t4, $0
+            syscall
+
+            # return to main menu
+            j   mainMenu
+
+        # question 2
+        Q2:
+            # print message: "Enter the graph: "
+            li  $v0, 4
+            la  $a0, q2str1
+            syscall
+
+            # get user input and store it at q2input
+            li  $v0, 8
+            la  $a0, q2input
+            li  $a1, 1024
+            syscall
+
+            la  $t0, q2input
+            move $t2, $0
+
+            # calculate length of the input, store it at $t2 register
+            CalculateLength:
+                lb   $t1, ($t0)
+                beqz $t1, CLDone
+                addi $t0, $t0, 1
+                addi $t2, $t2, 1
+                b    CalculateLength
+            CLDone:
+                addi $t2, $t2, -1
+
+            # store the input size at q2inpSize
+            la  $t1, q2inpSize
+            lw  $t4, ($t1)
+            add $t4, $t4, $t2
+            sw  $t4, ($t1)
+
+            # add first node to visited nodes
+            la  $t0, q2input
+            lb  $t1, 0($t0)
+            la  $t4, q2visited
+            sb  $t1, ($t4)
+
+            # increase visited size by 1
+            la   $t1, q2visSize
+            lw   $t4, ($t1)
+            addi $t4, $t4, 1
+            sw   $t4, ($t1)
+
+            move $t9, $0            # $t9: stores the total weight. initally 0.
+
+            # print output: "Minimum Spanning Tree: "
+            li  $v0, 4
+            la  $a0, q2str2
+            syscall
+
+            # start looping through input from here
+            q2StartAgain:
+
+            la   $t0, q2input       # load the address of q2input
+            la   $s0, space         # load the address of space
+            lb   $t3, 0($s0)        # store space value at $t3
+            move $s0, $0            # $s0: stores the counter
+            move $s1, $s0           # $s1: stores if first node is visited or not
+            move $s2, $s0           # $s2: stores if second node is visited or not
+            li   $s5, -1            # $s5: stores the current least weight. initially -1.
+            move $s6, $s0           # $s6: stores the first node
+            move $s7, $s0           # $s6: stores the second node
+            move $t7, $s0           # $t7: stores the first node with least weight
+            move $t8, $s0           # $t8: stores the second node with least weight
+
+            # read input byte by byte. if it's a space, pass.
+            q2StartLoop:
+                beqz $t2, q2SLDone
+                lb   $t1, 0($t0)
+                addi $t0, $t0, 1
+                addi $t2, $t2, -1
+
+                beq $t3, $t1, q2StartLoop              # if it's a space, return to beginning
+                beq $s0, 2, resetCounter               # if it's the third element, go check bits
+                beq $s0, $0, checkFirstNode            # if it's the first element, check if it's visited
+                beq $s0, 1, checkSecondNode            # if it's the second element, check if it's visited
+
+                # if only one of the nodes is visited, test it
+                checkToVisit:
+                    xor  $s1, $s1, $s2
+                    bnez $s1, compareLeast
+                    move $s1, $s0
+                    move $s2, $s0
+                    j    q2StartLoop
+
+                # check if current weight is less than others
+                compareLeast:
+                    move $s1, $s0
+                    move $s2, $s0
+                    beq  $s5, -1, initLeast
+                    bgt  $s5, $t1, changeLeast
+                    j    q2StartLoop
+
+                # set first weight to initialize
+                initLeast:
+                    move $s5, $t1
+                    move $t7, $s6
+                    move $t8, $s7
+                    j    q2StartLoop
+
+                # change least weighted edge
+                changeLeast:
+                    move $s5, $t1
+                    move $t7, $s6
+                    move $t8, $s7
+                    j    q2StartLoop
+
+            # reset the counter
+            resetCounter:
+                move $s0, $0
+                j    checkToVisit
+
+            # check if the first node is visited
+            checkFirstNode:
+                addi $s0, $s0, 1
+                move $s6, $t1
+                la   $s3, q2visited
+                la   $s4, q2visSize
+                lw   $s4, ($s4)
+                move $t4, $0
+
+                # loop through visited nodes and compare with current node, if it's found, set it as visited
+                loopVisited1:
+                    beqz $s4, return10
+                    lb   $s8, 0($s3)
+                    beq  $s8, $t1, return11
+                    addi $s3, $s3, 1
+                    addi $s4, $s4, -1
+                    j    loopVisited1
+
+                # not found
+                return10:
+                    move $s1, $0
+                    j    q2StartLoop
+
+                # found
+                return11:
+                    li  $s1, 1
+                    j   q2StartLoop
+
+            # check if the second node is visited
+            checkSecondNode:
+                addi $s0, $s0, 1
+                move $s7, $t1
+                la   $s3, q2visited
+                la   $s4, q2visSize
+                lw   $s4, ($s4)
+                move $t4, $0
+
+                # loop through visited nodes and compare with current node, if it's found, set it as visited
+                loopVisited2:
+                    beqz $s4, return20
+                    lb   $s8, 0($s3)
+                    beq  $s8, $t1, return21
+                    addi $s3, $s3, 1
+                    addi $s4, $s4, -1
+                    j    loopVisited2
+
+                # not found
+                return20:
+                    move $s2, $0
+                    j    q2StartLoop
+
+                # found
+                return21:
+                    li  $s2, 1
+                    j   q2StartLoop
+
+            # loop is done
+            q2SLDone:
+                # if weight is still set to -1, it means all nodes are visited, exit
+                beq $s5, -1, q2Done
+
+                # print first node
+                li   $v0, 11
+                move $a0, $t7
+                syscall
+
+                # print space
+                li  $v0, 4
+                la  $a0, space
+                syscall
+
+                # print second node
+                li   $v0, 11
+                move $a0, $t8
+                syscall
+
+                # print space
+                li  $v0, 4
+                la  $a0, space
+                syscall
+
+                # print weight
+                li   $v0, 11
+                move $a0, $s5
+                syscall
+
+                # add current weight to total weight. -48: extract ascii value.
+                addi $s5, $s5, -48
+                add  $t9, $t9, $s5
+
+                # get size of the visited nodes
+                la  $t5, q2visSize
+                lw  $t4, ($t5)
+
+                # add new nodes to visited nodes
+                la   $t6, q2visited
+                add  $t6, $t6, $t4
+                sb   $t7, ($t6)
+                addi $t6, $t6, 1
+                sb   $t8, ($t6)
+
+                # increase visited nodes size by 2.
+                addi $t4, $t4, 2
+                sw   $t4, ($t5)
+
+                # print new line
+                li  $v0, 4
+                la  $a0, newLine
+                syscall
+
+                # set $t2 to input size
+                la  $t1, q2inpSize
+                lw  $t2, ($t1)
+
+                # start again
+                j   q2StartAgain
+
+                # end of question 2
+                q2Done:
+                    # print output: "Total weight is: "
+                    li  $v0, 4
+                    la  $a0, q2str3
+                    syscall
+
+                    # print total weight
+                    li   $v0, 1
+                    move $a0, $t9
+                    syscall
+
+                    # clean visited nodes
+                    la   $s3, q2visited
+                    la   $s4, q2visSize
+                    lw   $s4, ($s4)
+                    la   $s5, space
+                    lb   $s5, ($s5)
+                    move $t4, $0
+                    CleanVisited:
+                        beqz $s4, CVDone
+                        sb   $s5, 0($s3)
+                        addi $s4, $s4, -1
+                        addi $s3, $s3, 1
+                        j    CleanVisited
+                    CVDone:
+
+                    # clean user input
+                    la   $s3, q2input
+                    la   $s4, q2inpSize
+                    lw   $s4, ($s4)
+                    la   $s5, space
+                    lb   $s5, ($s5)
+                    move $t4, $0
+                    CleanInput:
+                        beqz $s4, CIDone
+                        sb   $s5, 0($s3)
+                        addi $s4, $s4, -1
+                        addi $s3, $s3, 1
+                        j    CleanInput
+                    CIDone:
+
+                    # set size of the visited nodes to 0.
+                    la  $t1, q2visSize
+                    sw  $0, ($t1)
+                    j   mainMenu
+
+        # question 3
+        Q3:
+            # print message: "Enter an input string: "
+            li  $v0, 4
+            la  $a0, q3str1
+            syscall
+
+            # get user input
+            li  $v0, 8
+            la  $a0, q3input
+            li  $a1, 128
+            syscall
+
+            # print message: "Enter an offset value: "
+            li  $v0, 4
+            la  $a0, q3str2
+            syscall
+
+            # get user input
+            li  $v0, 5
+            syscall
+            add $t1, $v0, $0
+
+            la   $t0, q3input
+            move $t2, $0
+
+            # calculate length of the input, store it at $t2 register
+            Q3CalculateLength:
+                lb   $t5, ($t0)
+                beqz $t5, Q3CLDone
+                addi $t0, $t0, 1
+                addi $t2, $t2, 1
+                b    Q3CalculateLength
+            Q3CLDone:
+                addi $t2, $t2, -1
+
+            # print output: "SOURCE: "
+            li  $v0, 4
+            la  $a0, q3str3
+            syscall
+
+            # print the source
+            la   $t0, q3input
+            move $t3, $t2
+            printSource:
+                beqz $t2, PSDone
+                lb   $t4, ($t0)
+                addi $t2, $t2, -1
+                addi $t0, $t0, 1
+                blt  $t4, 'A', printSrc             # check if ascii value is less than 'A'
+                bgt  $t4, 'z', printSrc             # check if ascii value is more than 'z'
+                slt  $t5, $t4, 'a'                  # check if ascii value is between 'Z' and 'a'
+                sgt  $t6, $t4,'Z'
+                and  $t5, $t5, $t6
+                beq  $t5, 1, printSrc
+                bge  $t4, 'a', capitalizeSrc        # if letter is lowercase, make it uppercase
+
+                # print letter by letter
+                printSrc:
+                    li   $v0, 11
+                    move $a0, $t4
+                    syscall
+                    j    printSource
+
+                # make the letter uppercase with decreasing it by 32
+                capitalizeSrc:
+                addi $t4, $t4, -32
+                j    printSrc
+            PSDone:
+
+            # print new line
+            li  $v0, 4
+            la  $a0, newLine
+            syscall
+
+            la   $t0, q3input
+            move $t2, $t3
+
+            li  $v0, 4
+            la  $a0, q3str4
+            syscall
+
+            bgt $t1, $0, Encrypt        # if input > 0, encrypt
+            blt $t1, $0, Decrypt        # if input < 0, decrypt
+
+            # encrypt input
+            Encrypt:
+                q3EncryptLoop:
+                    beqz $t2, q3Done
+                    lb   $t4, ($t0)
+                    addi $t2, $t2, -1
+                    addi $t0, $t0, 1
+                    blt  $t4, 'A', directPrintEnc
+                    bgt  $t4, 'z', directPrintEnc
+                    slt  $t5, $t4, 'a'
+                    sgt  $t6,  $t4,'Z'
+                    and  $t5, $t5, $t6
+                    beq  $t5, 1, directPrintEnc
+                    bge  $t4, 'a', capitalizeEnc
+
+                    returnCapEnc:
+
+                    la   $s0, q3str5
+                    move $s1, $0
+
+                    # find the letter in the alphabet
+                    findEnc:
+                        lb   $s2, ($s0)
+                        beq  $t4, $s2, findAlpEnc
+                        addi $s0, $s0, 1
+                        addi $s1, $s1, 1
+                        j    findEnc
+
+                    # find the encrypted letter in the alphabet
+                    findAlpEnc:
+                        la  $s0, q3str5
+                        add $s0, $s0, $s1
+                        add $s0, $s0, $t1
+                        lb  $t4, ($s0)
+
+                    # print encrypted letter
+                    directPrintEnc:
+                    li   $v0, 11
+                    move $a0, $t4
+                    syscall
+                    j    q3EncryptLoop
+
+                    # make the letter uppercase with decreasing it by 32
+                    capitalizeEnc:
+                    addi $t4, $t4, -32
+                    j    returnCapEnc
+
+            # decrypt input
+            Decrypt:
+                q3DecryptLoop:
+                    beqz $t2, q3Done
+                    lb   $t4, ($t0)
+                    addi $t2, $t2, -1
+                    addi $t0, $t0, 1
+                    blt  $t4, 'A', directPrintDec
+                    bgt  $t4, 'z', directPrintDec
+                    slt  $t5, $t4, 'a'
+                    sgt  $t6,  $t4,'Z'
+                    and  $t5, $t5, $t6
+                    beq  $t5, 1, directPrintDec
+                    bge  $t4, 'a', capitalizeDec
+
+                    returnCapDec:
+
+                    la   $s0, q3str5
+                    move $s1, $0
+
+                   # find the letter in the alphabet
+                    findDec:
+                        lb   $s2, ($s0)
+                        beq  $t4, $s2, findAlpDec
+                        addi $s0, $s0, 1
+                        addi $s1, $s1, 1
+                        j    findDec
+
+                    # find the decrypted letter in the alphabet
+                    findAlpDec:
+                        la  $s0, q3str5
+                        add $s0, $s0, 26
+                        add $s0, $s0, $s1
+                        add $s0, $s0, $t1
+                        lb  $t4, ($s0)
+
+                    # print decrypted letter
+                    directPrintDec:
+                    li   $v0, 11
+                    move $a0, $t4
+                    syscall
+                    j    q3DecryptLoop
+
+                    # make the letter uppercase with decreasing it by 32
+                    capitalizeDec:
+                    addi $t4, $t4, -32
+                    j    returnCapDec
+
+            # end of question 3
+            q3Done:
+                # clean user input
+                la   $s3, q3input
+                move $s4, $t3
+                la   $s5, space
+                lb   $s5, ($s5)
+                move $t4, $0
+                Q3CleanInput:
+                    beqz $s4, Q3CIDone
+                    sb   $s5, 0($s3)
+                    addi $s4, $s4, -1
+                    addi $s3, $s3, 1
+                    j    Q3CleanInput
+                Q3CIDone:
+                    j   mainMenu
+
+        # quit the program
+        EXIT:
+            # print exit message: "Program ends. Bye..."
+            li  $v0, 4
+            la  $a0, exitstr
+            syscall
+
+            # exit command
+            li  $v0, 10
+            syscall
