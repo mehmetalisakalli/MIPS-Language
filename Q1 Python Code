@@ -1,0 +1,9 @@
+current_number = input("Enter the first number in the series: ")
+count = input("Enter the number of integers in the series: ")
+offset = input("Enter the offset between two successive integers in the series: ")
+sum = 0
+print("The series is: ")
+for i in range(count):
+    print(current_number)
+    sum += current_number
+    current_number  += offset
