@@ -1,0 +1,30 @@
+nodes = input("Enter the graph: ")
+nodes = [int(x) for x in nodes.split(' ')]
+visited_nodes = []
+visited_nodes.append(nodes[0])
+total_weight= 0
+
+while nodes:
+    smallest = max(nodes)+1
+    smallest_index = 0
+    for i in range(2,len(nodes),3):
+        if nodes[i] < smallest and (nodes[i-1] in visited_nodes or nodes[i-2] in visited_nodes):
+            #print(nodes[i-2],nodes[i-1],nodes[i])
+            smallest = nodes[i]
+            smallest_index = i
+    visited_nodes.append(nodes[smallest_index - 2])
+    visited_nodes.append(nodes[smallest_index - 1])
+    print(nodes[smallest_index- 2] ,nodes[smallest_index - 1], smallest)
+    i = 2
+    while True:
+            if nodes[i-1] in visited_nodes and nodes[i-2] in visited_nodes:
+                del nodes[i]
+                del nodes[i-1]
+                del nodes[i-2]
+                i -= 3
+            i+=3
+            if i > len(nodes):
+                break
+
+    total_weight += smallest
+print(total_weight)
